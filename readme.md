@@ -12,7 +12,7 @@
 
 (3) Download the project
 
-    git clone https://gist.github.com/1481a9789785bd7e6103d93ef2f73c0a.git ~/_lamp
+    git clone https://github.com/gmolop/_LAMP_on_WSL.git ~/_lamp
 
 (4) Run the installer (& define 'DocumentRoot' dir)
 
@@ -34,3 +34,14 @@ Tested (29-oct-19) under:
 * Debian 10.1 (buster)
 
 > WSL install notes: https://wiki.debian.org/InstallingDebianOn/Microsoft/Windows/SubsystemForLinux
+
+---
+
+Files:
+- readme.md        // install steps
+- prepare-wsl-lamp // install lamp
+- create-project   // creates vhost and project folder
+- generate-ssl     // create a SSL auto-signed certificate for given site
+- index            // localhost index
+- clean            // removes server files
+- vhost-template   // template for new projects
