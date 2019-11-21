@@ -1,0 +1,7 @@
+- readme.md        // install steps
+- prepare-wsl-lamp // install lamp
+- create-project   // creates vhost and project folder
+- generate-ssl     // create a SSL auto-signed certificate for givven site
+- index            // localhost index
+- clean            // removes server files
+- vhost-template   // template for new projects

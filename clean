@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# clean instalation files
+
+# remove project folder
+cd ~/
+sudo rm -r -f _lamp
+
+# remove vhost sites
+sudo shopt -s extglob
+sudo cd /etc/apache2/sites-available
+sudo rm !(000-default.conf|default-ssl.conf)
+sudo cd /etc/apache2/sites-enabled
+sudo rm !(000-default.conf)
+sudo rm -R /etc/apache2/ssl
+sudo shopt -u extglob
+cd ~/
+
+# optional, remove apache & database (cleaning data)
+# sudo apt remove --purge apache2 mariadb-server mariadb-client

@@ -1,0 +1,217 @@
+#!/bin/bash
+
+# This script will update and install LAMP dependencies
+#
+# DBhost: localhost
+# DBuser: root
+# DBpass: local
+#
+# Usage example
+# sh ~/_lamp/prepare-wsl-lamp "/mnt/c/Users/<you>/www"
+
+# ----- REQUIRED TO INIT
+    # Update system first
+    # 
+    # sudo apt -y update
+    # sudo apt -y install software-properties-common
+    # sudo apt -y upgrade
+
+# ----- SET USER FOLDER & LOCAL PATH
+    # check $1, ask if was not givven
+    if [ -z "$1" ]; then
+        read -p "Enter local user folder to be used as DocumentRoot. Example: /mnt/c/Users/<you>/www " answer
+        if [ -z "$answer" ]; then
+            echo "Nothing then..."
+            exit 0
+        else
+            localUserFolder="$answer"
+        fi
+    else
+        localUserFolder="$1"
+    fi
+
+# ----- APACHE
+    # install
+    sudo apt -y install apache2
+
+    # start it
+    sudo service apache2 start
+    # open browser in localhost, should show a default page
+
+    # enable some apache modules
+    sudo a2enmod rewrite
+
+    # restart apache
+    sudo service apache2 restart
+
+# ----- MySQL//MariaDB
+    # install
+    sudo apt install -y mariadb-server mariadb-client
+    # start is required to secure installation
+    sudo service mysql start
+
+    # one-time secure installation (also, set root password)
+    if [ ! -f ~/_lamp/.mysql_secured ]; then
+        sudo touch ~/_lamp/.mysql_secured
+        sudo mysql_secure_installation <<EOF
+
+y
+local
+local
+y
+y
+y
+y
+EOF
+
+        # allow access with user/pass
+        sudo mysql -u root -plocal -e "update mysql.user set plugin = 'mysql_native_password' where User='root';"
+        sudo mysql -u root -plocal -e "FLUSH PRIVILEGES;"
+
+    fi
+
+    # restart MySQL
+    sudo service mysql restart
+
+# ----- PHP
+    # Install PHP
+    sudo apt -y install php7.3 php7.3-cli php7.3-common
+
+    # PHP Support for Apache
+    sudo apt -y install apache2 libapache2-mod-php7.3
+
+    # PHP Support for Ngnix
+    sudo apt -y install php7.3-fpm
+    # Once you have installed FastCGI manager, add socket details in Nginx virtual host.
+    # server {
+    # # ...other codes...
+    #   location ~* \.php$ {
+    #     fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+    #     include         fastcgi_params;
+    #     fastcgi_param   SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+    #     fastcgi_param   SCRIPT_NAME        $fastcgi_script_name;
+    #   }
+    # }
+
+    # Install PHP Extensions
+    sudo apt -y install php7.3-mysql
+    sudo apt -y install php7.3-mcrypt
+    sudo apt -y install php7.3-gettext
+    sudo apt -y install php7.3-zip
+    sudo apt -y install php7.3-dom
+    sudo apt -y install php7.3-simplexml
+    sudo apt -y install php7.3-ssh2
+    sudo apt -y install php7.3-xml
+    sudo apt -y install php7.3-xmlreader
+    sudo apt -y install php7.3-curl
+    sudo apt -y install php7.3-exif
+    sudo apt -y install php7.3-ftp
+    sudo apt -y install php7.3-gd
+    sudo apt -y install php7.3-iconv
+    sudo apt -y install php7.3-imagick
+    sudo apt -y install php7.3-json
+    sudo apt -y install php7.3-mbstring
+    sudo apt -y install php7.3-posix
+    sudo apt -y install php7.3-sockets
+    sudo apt -y install php7.3-tokenizer
+    sudo apt -y install php7.3-pdo
+    sudo apt -y install php-pear
+    sudo apt -y install tar
+    sudo apt -y install gzip
+    sudo apt -y install zip
+    sudo apt -y install unzip
+    sudo apt -y install bzip2
+
+    # optional custom tools/services
+    sudo apt -y install git
+    sudo apt -y install wget
+    sudo apt -y install ssh
+    sudo apt -y install mtop
+    sudo apt -y install vim
+    sudo apt -y install ccze
+
+    # Enable modules
+    sudo phpenmod mcrypt
+    sudo phpenmod mbstring
+    sudo a2enmod ssl
+
+    # restart apache
+    sudo service apache2 restart
+
+# ----- PHPMyAdmin
+    # sudo apt -y install phpmyadmin
+
+# ----- COMPOSER
+    # after install (https://getcomposer.org/download/) run and continue with
+    # auto intall
+    wget https://raw.githubusercontent.com/composer/getcomposer.org/master/web/installer -O - -q | php -- --quiet
+    sudo mv composer.phar /usr/local/bin/composer
+    # test running "composer" command
+
+# ----- LARAVEL
+    composer global require laravel/installer
+    echo 'export PATH="$PATH:$HOME/.composer/vendor/bin"' >> ~/.bashrc
+    source ~/.bashrc
+
+# ----- PROJECT on MNT
+    # create project folder if not exist
+    if [ ! -d "$localUserFolder" ]; then
+        echo "Creating $localUserFolder directory..."
+        sudo mkdir -p $localUserFolder
+    fi
+
+    # symbolic link
+    sudo ln -s $localUserFolder /var/www/devroot
+
+    # create php index file
+    sudo cp ~/_lamp/index /var/www/devroot/index.php
+    sudo chmod 777 /var/www/devroot/index.php
+
+    # replace default documentRoot to /var/www/devroot
+    sudo sed -i 's+DocumentRoot.*+DocumentRoot /var/www/devroot+g' /etc/apache2/sites-available/000-default.conf
+    
+    # add some usefull alias to .profile
+    echo "" >> ~/.profile
+    echo "# custom alias" >> ~/.profile
+    echo "alias aliasedit='vim ~/.profile;source ~/.profile'" >> ~/.profile
+    echo "alias errors='tail -f /var/log/apache2/error.log | ccze'" >> ~/.profile
+    echo "alias apachestop='sudo service apache2 stop'" >> ~/.profile
+    echo "alias apachestart='sudo service apache2 start'" >> ~/.profile
+    echo "alias apacherestart='sudo service apache2 restart'" >> ~/.profile
+    source ~/.profile
+
+# ----- RESTART & FINISH
+    sudo service mysql restart
+    sudo service apache2 restart
+
+    powershell.exe /c start http://localhost/
+
+    echo ""
+    echo "======================="
+    echo ""
+    echo "All Done!"
+    echo "localhost should work at root"
+    echo "database is set up and secure"
+    echo "DBhost: localhost"
+    echo "DBuser: root"
+    echo "DBpass: local"
+    echo ""
+    echo "======================="
+    echo ""
+    echo "Projects can be created with dedicated script located in your home directory"
+    echo "this will also generate the SSL certificate for you..."
+    echo ""
+    echo "Usage: create-project <project-name>"
+    echo "Example for https://test-domain.local/"
+    echo "sh ~/_lamp/create-project \"test-domain.local\""
+    echo ""
+    echo "======================="
+    echo ""
+    echo "If you need to generate SSL for an existent project, then use this script"
+    echo ""
+    echo "Usage: generate-ssl <project-name>"
+    echo "Example for https://test-domain.local/"
+    echo "sudo sh ~/_lamp/generate-ssl \"test-domain.local\""
+    echo ""
+    echo "======================="
+    echo ""

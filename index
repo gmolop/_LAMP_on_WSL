@@ -1,0 +1,263 @@
+<?php
+// @todo: add more actions
+
+// show phpinfo page
+if (isset($_GET["phpinfo"])) {
+    phpinfo();
+    exit();
+}
+
+// get current target page
+$currentPath = shell_exec('readlink -f /var/www/devroot');
+$version = [
+    "PHP" => phpversion(),
+    "Apache" => apache_get_version(),
+    "Mysql" => shell_exec('mysql --version'),
+    // "Mysql" => mysqli_get_client_info(),
+    // "Laravel" => shell_exec('php artisan --version'),
+    // "Composer" => shell_exec('composer -V'),
+    "OS" => shell_exec('cat /etc/issue'),
+];
+
+// system info
+$systemInfo = [];
+foreach ($version as $key => $value) {
+    $systemInfo[] = $key . " <span>" . $value . "</span>";
+}
+$systemInfo = join(" | ", $systemInfo);
+
+// @todo:
+// - not work...
+// - only one
+// do action
+if ( !empty($_GET['action']) && !empty($_GET['action']) ) {
+    $action = $_GET['action'];
+    $site = $_GET['site'];
+    $path = $_GET['path'];
+
+    switch ($action) {
+        case 'disable':
+                shell_exec('a2dissite '.$site);
+                shell_exec('service apache2 reload');
+            break;
+        case 'enable':
+                shell_exec('a2ensite '.$site);
+                shell_exec('service apache2 reload');
+            break;
+        case 'remove':
+            break;
+        case 'projectNew':
+            break;
+        default:
+            break;
+    }
+}
+
+
+// $erro_log = shell_exec('tail -n 15 /var/log/apache2/error.log');
+
+$sitesAvailable = parseDir("/etc/apache2/sites-available/");
+$sitesEnabled = parseDir("/etc/apache2/sites-enabled/");
+
+function createMenu($list, $type) {
+
+    global $sitesEnabled;
+
+    foreach($list as $site) {
+        echo '<li>';
+        switch ($type) {
+            case 'available':
+                echo '<a>' . $site . '</a>';
+                // echo '&nbsp;(<a href="' . $site . '">browse</a>)';
+                // echo '&nbsp;(<a href="' . $site . '/log/error_log">log</a>)';
+                if (!in_array($site, $sitesEnabled)) {
+                    // echo '&nbsp;(<a href="/?action=enable&site=' . $site . '">enable</a>)';
+                }
+                // echo '&nbsp;(<a href="/?action=remove&site=' . $site . '">remove</a>)';
+                break;
+            case 'enabled':
+                echo '<a href="https://' . $site . '">https://' . $site . '/</a>';
+                // echo '&nbsp;(<a href="/?action=disable&site=' . $site . '">disable</a>)';
+                break;
+            default:
+                break;
+        }
+        echo '</li>';
+    }
+}
+
+function parseDir($dir) {
+    $files = [];
+    foreach(new DirectoryIterator($dir) as $item) {
+        if ($item->isDot() || !$item->isFile()) continue;
+        if (in_array($item->getFilename(), [
+            "000-default.conf",
+            "default-ssl.conf"
+        ])) continue;
+        $files[] = rtrim($item->getFilename(), '.config');
+    }
+
+    return $files;
+}
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>localhost</title>
+    <style>
+        /* RESET */
+        html, body, div, span, applet, object, iframe,
+        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+        a, abbr, acronym, address, big, cite, code,
+        del, dfn,
+        /*em,*/
+        img, ins, kbd, q, s, samp,
+        /*small,*/
+        strike, strong, sub, sup, tt, var,
+        b, u, i, center,
+        dl, dt, dd,
+        /*ol, ul, li,*/
+        fieldset, form, label, legend,
+        table, caption, tbody, tfoot, thead, tr, th, td,
+        article, aside, canvas, details, embed,
+        figure, figcaption, footer, header, hgroup,
+        menu, nav, output, ruby, section, summary,
+        time, mark, audio, video {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }
+        /* HTML5 display-role reset for older browsers */
+        article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+            display: block;
+        }
+        body {
+            line-height: 1;
+        }
+        /*ol, ul {
+            list-style: none;
+        }*/
+        blockquote, q {
+            quotes: none;
+        }
+        blockquote:before, blockquote:after,
+        q:before, q:after {
+            content: '';
+            content: none;
+        }
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        /* CUSTOM */
+        body {
+            font-family: monospace;
+            background-color: #1f1f1d;
+            color: #FFEB3B;
+        }
+        div {
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #272727;
+            border-bottom: 1px solid #5a5a5a;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+            background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+        }
+        input {
+            background-color: transparent;
+            border-width: 1px;
+            border-style: solid;
+            color: #ff9800;
+        }
+        .intro {
+            white-space: pre-wrap;
+            /*width: 390px;*/
+            width: 325px;
+        }
+        center span,
+        a {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="intro"><hr />    __                 ____               __
+   / /___  _________ _/ / /_  ____  _____/ /_
+  / / __ \/ ___/ __ `/ / __ \/ __ \/ ___/ __/
+ / / /_/ / /__/ /_/ / / / / / /_/ (__  ) /_
+/_/\____/\___/\__,_/_/_/ /_/\____/____/\__/
+
+<hr /></div>
+
+    <div class="links">
+
+        <h3>Internal links</h3>
+        <ul>
+            <li><a href="/?phpinfo">phpinfo</a></li>
+            <!-- <li><a href="/phpmyadmin">phpmyadmin</a></li> -->
+        </ul>
+
+        <hr />
+
+    </div>
+
+    <div class="links">
+
+        <h1>Projects</h1>
+        <ul>
+            <li>document root <a><?=$currentPath;?></a></li>
+            <li>create new prjct <a>sh ~/_lamp/create-project "test-domain.local" "path-to-project-under-server-root/test-domain" "public-root-folder-under-project-path"</a></li>
+            <!--
+            <li>
+                <form action="" method="GET">
+                    <input type="hidden" name="action" value="projectNew">
+                    site <input type="text" name="site" placeholder="ex. example.local">
+                    path <input type="text" name="path" placeholder="ex. c/Users/admin/Documents/www">
+                    <input type="submit" value="create new">
+                </form>
+            </li>
+            -->
+        </ul>
+
+        <hr />
+
+        <h3>Sites Available</h3>
+        <ul><?=createMenu($sitesAvailable, 'available');?></ul>
+
+        <hr />
+
+        <h3>Sites Enabled</h3>
+        <ul><?=createMenu($sitesEnabled, 'enabled');?></ul>
+
+        <hr />
+
+    </div>
+
+    <center>
+        <?=$systemInfo?>
+        <hr />
+        <small>by <a href="https://github.com/gmolop">gmolop</a> | code <a href="https://gist.github.com/gmolop/1481a9789785bd7e6103d93ef2f73c0a">github</a></small>
+    </center>
+
+    <?php /*
+    <div class="log">
+        <h3>Error Log</h3>
+        <pre><?=$erro_log?></pre>
+    </div>
+    */ ?>
+
+</body>
+</html>

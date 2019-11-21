@@ -1,0 +1,47 @@
+<VirtualHost *:80>
+    ServerAdmin template.email
+
+    ServerName template.url
+    DocumentRoot template.docRoot
+    <Directory />
+        Options FollowSymLinks
+        AllowOverride All
+    </Directory>
+
+    <Directory template.docRoot/>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride All
+        Order allow,deny
+        allow from All
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    LogLevel debug
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerAdmin template.email
+
+    ServerName template.url
+    DocumentRoot template.docRoot
+    <Directory />
+        Options FollowSymLinks
+        AllowOverride All
+    </Directory>
+
+    <Directory template.docRoot/>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride All
+        Order allow,deny
+        allow from All
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    LogLevel debug
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    SSLEngine on
+    SSLCertificateFile /etc/apache2/ssl/template.url.crt
+    SSLCertificateKeyFile /etc/apache2/ssl/template.url.key
+</VirtualHost>

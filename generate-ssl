@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# create a SSL auto-signed certificate for givven site
+#
+# Usage
+# sudo sh ~/_lamp/generate-ssl "test-domain.local"
+
+# Set the domain we want to use
+# check $1, ask if was not givven
+if [ -z "$1" ]; then
+    read -p "Enter project name. Example: test-domain.local " bdAnswer
+    if [ -z "$bdAnswer" ]; then
+        echo "Nothing then..."
+        exit 0
+    else
+        baseDomain="$bdAnswer"
+    fi
+else
+    baseDomain="$1"
+fi
+
+# Days for the cert to live
+DAYS=3650
+# A blank passphrase
+PASSPHRASE=""
+# Container folder
+sudo mkdir /etc/apache2/ssl
+baseFolder="/etc/apache2/ssl"
+# Generated configuration file
+configFile="$baseFolder/$baseDomain.txt"
+# The file name can be anything
+fileName="$baseFolder/$baseDomain"
+
+# Remove previous keys
+echo "Removing existing certs & files like $baseDomain.*"
+sudo chmod 770 $fileName.*
+sudo rm $fileName.*
+
+sudo cat > $configFile <<-EOF
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+x509_extensions = v3_req
+distinguished_name = dn
+
+[dn]
+C = ES
+ST = VA
+L = Valencia
+O = Vizual.es
+OU = Dev Domain
+emailAddress = webmaster@$baseDomain
+CN = $baseDomain
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = *.$baseDomain
+DNS.2 = $baseDomain
+EOF
+
+echo "Generating certs for $baseDomain"
+
+# Generate our Private Key, CSR and Certificate
+# Use SHA-2 as SHA-1 is unsupported from Jan 1, 2017
+
+sudo openssl req -new -x509 -newkey rsa:2048 -sha256 -nodes -keyout "$fileName.key" -days $DAYS -out "$fileName.crt" -passin pass:$PASSPHRASE -config "$configFile"
+
+# OPTIONAL - write an info to see the details of the generated crt
+sudo openssl x509 -noout -fingerprint -text < "$fileName.crt" > "$fileName.info"
+
+# Protect the key
+sudo chmod 400 "$fileName.key"
+
+# Add to keychain
+echo "Adding $fileName.cer to trusted cert."
+# @todo: add case to allow other os
+# Linux*)
+# echo "LINUX (not-ready-or-supported)"
+# sudo /sbin/service httpd restart*)
+# Darwin*)
+# sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain $fileName.crt
+# /usr/local/bin/apachectl -k restart
+
+# create ssl folder if not exist
+if [ ! -d "/var/www/devroot/ssl" ]; then
+    echo "Creating ssl directory..."
+    sudo mkdir "/var/www/devroot/ssl"
+fi
+# copy now the cert file into it
+sudo cp $fileName.crt "/var/www/devroot/ssl/$baseDomain.crt"
+echo "==========================="
+echo "$baseDomain.crt file has been copied to project folder"
+echo "- Open the file to install it"
+echo "- Select Install certificate => Local machine and browse the certificate store."
+echo "- Certificate should be installed into Trusted Root Certification Authorities."
+echo "---------------------------"
+echo "FireFox users should manually import the certificate via the Firefox settings."
+echo "==========================="
+
+# Restart Apache
+sudo service apache2 restart
+
+echo "Done."

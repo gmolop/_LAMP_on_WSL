@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# This script will create a site project under DocumentRoot
+# @todo: improve with options
+#
+# Usage
+# sh ~/_lamp/create-project "test-domain.local"
+# sh ~/_lamp/create-project "test-domain.local" "_git/GitLab/cooper-ads/dev/test-domain"
+# sh ~/_lamp/create-project "test-domain.local" "_git/GitLab/cooper-ads/dev/test-domain" "public_root"
+
+# Define and create default values.
+# check $1, ask if was not given
+if [ -z "$1" ]; then
+    read -p "Enter project name. Example: my-project-name.local " pnAnswer
+    if [ -z "$pnAnswer" ]; then
+        echo "Noting then..."
+        exit 0
+    else
+        projectName="$pnAnswer"
+    fi
+else
+    projectName="$1"
+fi
+# check $2, ask if was not given
+if [ -z "$2" ]; then
+    read -p "Enter project folder. Example: if project was my-project-name.local, could be the same or existing directory like git/some/project (default is projectName) " pfAnswer
+    if [ -z "$pfAnswer" ]; then
+        echo "Using default ($projectName)"
+        projectFolder="$projectName"
+    else
+        projectFolder="$pfAnswer"
+    fi
+else
+    projectFolder="$2"
+fi
+
+# check $3, ask if was not given
+if [ -z "$3" ]; then
+    read -p "Enter project public folder (starting from project folder). Example: if project was my-project-name.local, public could be htdocs (default is empty/root) " ppAnswer
+    if [ -z "$ppAnswer" ]; then
+        echo "Using default (project root)"
+        publicPath=""
+    else
+        publicPath="$ppAnswer"
+    fi
+else
+    publicPath="$3"
+fi
+
+
+email="webmaster@localhost"
+
+# check if folder is empty
+if [ -z "$publicPath" ]; then
+    docRoot="/var/www/devroot/$projectFolder"
+else
+    docRoot="/var/www/devroot/$projectFolder/$publicPath"
+fi
+
+# Check if the docRoot exists, if it does not exist then we'll create it.
+if [ ! -d "$docRoot" ]; then
+    echo "Creating $docRoot directory..."
+    sudo mkdir -p $docRoot
+    # create dummy index file
+    echo "<?php echo 'Works!<br><small>You should find the certificate in project container folder ;)</small>'; ?>" | sudo tee $docRoot/index.php
+fi
+
+echo -e "\nCreating the new $projectName Virtual Host with DocumentRoot: $docRoot"
+# get updated copy of the vhost template
+
+# copy and replace...
+sudo cp ~/_lamp/vhost-template /etc/apache2/sites-available/$projectName.conf
+sudo sed -i 's/template.email/'$email'/g' /etc/apache2/sites-available/$projectName.conf
+sudo sed -i 's/template.url/'$projectName'/g' /etc/apache2/sites-available/$projectName.conf
+sudo sed -i 's#template.docRoot#'$docRoot'#g' /etc/apache2/sites-available/$projectName.conf
+
+echo "Adding $projectName to the /etc/hosts file..."
+# sudo sed -i "1s/^/127.0.0.1       $projectName\n/" /etc/hosts
+sudo echo "127.0.0.1    $projectName" >> /mnt/c/Windows/System32/drivers/etc/hosts
+sudo echo "::1    $projectName" >> /mnt/c/Windows/System32/drivers/etc/hosts
+
+# enable the site
+sudo a2ensite $projectName.conf
+
+# Creating SSL certificate
+sudo sh ~/_lamp/generate-ssl $projectName
+
+# restart apache
+sudo service apache2 restart
+
+# done
+echo -e "\nYou can now browse to your Virtual Host at https://$projectName/"
+powershell.exe /c start https://$projectName/
+
+exit 0
