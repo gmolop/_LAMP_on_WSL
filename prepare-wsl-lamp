@@ -178,6 +178,9 @@ EOF
     echo "alias apachestop='sudo service apache2 stop'" >> ~/.profile
     echo "alias apachestart='sudo service apache2 start'" >> ~/.profile
     echo "alias apacherestart='sudo service apache2 restart'" >> ~/.profile
+    echo "alias mysqlstop='sudo service mysql stop'" >> ~/.profile
+    echo "alias mysqlstart='sudo service mysql start'" >> ~/.profile
+    echo "alias mysqlrestart='sudo service mysql restart'" >> ~/.profile
     source ~/.profile
 
 # ----- RESTART & FINISH
