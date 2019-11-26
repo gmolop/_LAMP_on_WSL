@@ -219,7 +219,20 @@ function parseDir($dir) {
         <h1>Projects</h1>
         <ul>
             <li>document root <a><?=$currentPath;?></a></li>
-            <li>create new prjct <a>sh ~/_lamp/create-project "test-domain.local" "path-to-project-under-server-root/test-domain" "public-root-folder-under-project-path"</a></li>
+            <li>
+                create new project example:
+                <ul>
+                    <li><a>sh ~/_lamp/create-project "test-domain.local"</a></li>
+                    <li><a>sh ~/_lamp/create-project "test-domain.local" "_git/GitLab/cooper-ads/dev/test-domain"</a></li>
+                    <li><a>sh ~/_lamp/create-project "test-domain.local" "_git/GitLab/cooper-ads/dev/test-domain" "public_root"</a></li>
+                </ul>
+            </li>
+            <li>
+                generate ssl for a existing project:
+                <ul>
+                    <li><a>sudo sh ~/_lamp/generate-ssl "test-domain.local"</a></li>
+                </ul>
+            </li>
             <!--
             <li>
                 <form action="" method="GET">
