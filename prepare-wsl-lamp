@@ -175,9 +175,9 @@ EOF
     echo "# custom alias" >> ~/.profile
     echo "alias aliasedit='vim ~/.profile;source ~/.profile'" >> ~/.profile
     echo "alias errors='tail -f /var/log/apache2/error.log | ccze'" >> ~/.profile
-    echo "alias apachestop='sudo service apache2 stop'" >> ~/.profile
-    echo "alias apachestart='sudo service apache2 start'" >> ~/.profile
-    echo "alias apacherestart='sudo service apache2 restart'" >> ~/.profile
+    echo "alias apachestop='sudo service apache2 stop;sudo service mysql stop'" >> ~/.profile
+    echo "alias apachestart='sudo service apache2 start;sudo service mysql start'" >> ~/.profile
+    echo "alias apacherestart='sudo service apache2 restart;sudo service mysql restart'" >> ~/.profile
     source ~/.profile
 
 # ----- RESTART & FINISH

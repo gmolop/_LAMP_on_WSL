@@ -16,5 +16,7 @@ sudo rm -R /etc/apache2/ssl
 sudo shopt -u extglob
 cd ~/
 
+sudo service apache2 restart
+
 # optional, remove apache & database (cleaning data)
 # sudo apt remove --purge apache2 mariadb-server mariadb-client
