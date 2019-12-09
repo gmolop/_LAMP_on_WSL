@@ -197,10 +197,15 @@ EOF
     echo "alias apacherestart='sudo service apache2 restart;sudo service mysql restart'" >> ~/.zshrc
     source ~/.zshrc
 
+    # Prevent APR_TCP_DEFER_ACCEPT error
     sudo bash -c "echo '' >> /etc/apache2/apache2.conf"
     sudo bash -c "echo '# Prevent APR_TCP_DEFER_ACCEPT error when starting Apache2' >> /etc/apache2/apache2.conf"
     sudo bash -c "echo 'AcceptFilter http none' >> /etc/apache2/apache2.conf"
     sudo bash -c "echo 'AcceptFilter https none' >> /etc/apache2/apache2.conf"
+    
+    # Set system localtime to UTC
+    sudo mv /etc/localtime /etc/localtime.ori
+    sudo ln -s /usr/share/zoneinfo/UTC /etc/localtime
 
 # ----- RESTART & FINISH
     sudo service mysql restart
