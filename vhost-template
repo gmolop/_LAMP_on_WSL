@@ -1,10 +1,10 @@
 # required (only one)
-<VirtualHost *:80>
+<VirtualHost template.url:80>
     DocumentRoot /fake/but/required
 </VirtualHost>
 
 # one per domain
-<VirtualHost *:80 *:443>
+<VirtualHost template.url:80 template.url:443>
     ServerAdmin template.email
 
     ServerName template.url
