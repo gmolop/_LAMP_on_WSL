@@ -29,6 +29,6 @@
     SSLEngine on
     SSLCertificateFile /etc/apache2/ssl/template.url.crt
     SSLCertificateKeyFile /etc/apache2/ssl/template.url.key
-    
+
     # RewriteMap
 </VirtualHost>
