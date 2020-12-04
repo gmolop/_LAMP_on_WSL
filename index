@@ -7,9 +7,48 @@ if (isset($_GET["phpinfo"])) {
     exit();
 }
 
+// IP's
+function getip($from) {
+    switch ($from) {
+        case 'Server':
+            $_ip = @$_SERVER['HTTP_X_SERVER_ADDRESS'] ?: @$_SERVER['SERVER_ADDR'];
+            break;
+        case 'Client':
+            if (isset($_SERVER)) {
+                if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
+                    $_ip = $_SERVER["HTTP_X_FORWARDED_FOR"];
+                } elseif (isset($_SERVER["HTTP_CLIENT_IP"])) {
+                    $_ip = $_SERVER["HTTP_CLIENT_IP"];
+                } else {
+                    $_ip = @$_SERVER["REMOTE_ADDR"];
+                }
+            } else {
+                if (getenv('HTTP_X_FORWARDED_FOR')) {
+                    $_ip = getenv('HTTP_X_FORWARDED_FOR');
+                } elseif (getenv('HTTP_CLIENT_IP')) {
+                    $_ip = getenv('HTTP_CLIENT_IP');
+                } else {
+                    $_ip = getenv('REMOTE_ADDR');
+                }
+            }
+            break;
+        case 'Public':
+            $_ip = file_get_contents('http://ipecho.net/plain');
+            break;
+    }
+    $return = false;
+    if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $return = $from . ' <a>IPv4 '.$_ip.'</a>';
+    }
+    if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        $return = $from . ' <a>IPv6 '.$_ip.'</a>';
+    }
+    return $return ?: $from . ' has an invalid IP';
+}
+
 // get current target page
 $currentPath = shell_exec('readlink -f /var/www/devroot');
-$version = [
+$lamp = [
     "PHP" => phpversion(),
     "Apache" => apache_get_version(),
     "Mysql" => shell_exec('mysql --version'),
@@ -18,35 +57,71 @@ $version = [
     // "Composer" => shell_exec('composer -V'),
     "OS" => shell_exec('cat /etc/issue'),
 ];
+$php_modules = [
+    "bcmath","bz2","calendar","Core","ctype","curl","date","dba","dom","ereg","exif","fileinfo","filter","ftp","gd","gettext","hash","iconv","imap","ionCube Loader","json","libxml","mbstring","mhash","mysql","mysqli","openssl","pcntl","pcre","PDO","pdo_mysql","pdo_sqlite","Phar","posix","readline","Reflection","session","shmop","SimpleXML","soap","sockets","SPL","sqlite3","standard","sysvmsg","sysvsem","sysvshm","tokenizer","wddx","xml","xmlreader","xmlwriter","xsl","Zend OPcache","zip","zlib"
+];
+$apache_modules = [
+    "access_compact","auth_basic","authn_core","deflate","filter","proxy","reqtimeout","status","cgi","fcgid","headers","negotiation","socache_shmcb","userdir","autoindex","dir","include","proxy_fcgi","remoteip","rewrite","setenvif","suexec"
+];
+$owl_extensions = [
+    "standard","SPL","Core","openssl","pcre","filter","json","date","ctype","tokenizer","hash","mysqli","SimpleXML","mbstring","gettext","sysvshm","curl","readline","sockets","pcntl","posix","session","xml","sodium","zlib","Zend OPcache","iconv","gd","libxml"
+];
 
 // system info
-$systemInfo = [];
-foreach ($version as $key => $value) {
-    $systemInfo[] = $key . " <span>" . $value . "</span>";
-}
-$systemInfo = join(" | ", $systemInfo);
+$systemInfo = [
+    "lamp" => [],
+    "php" => [],
+    "apache" => [],
+    "owl" => []
+];
+
+// lamp
+foreach ($lamp as $key => $value) {
+    $systemInfo['lamp'][] = $key . " <span>" . $value . "</span>";
+} $lampInfo = join(" | ", $systemInfo['lamp']);
+
+// php modules
+foreach ($php_modules as $key) {
+    $systemInfo['php'][] = "<span class=\"". (extension_loaded($key) ? 'enabled': 'disabled') ."\"></span> " . $key;
+} $phpInfo = join(" | ", $systemInfo['php']);
+// apache modules
+foreach ($apache_modules as $key) {
+    $systemInfo['apache'][] = "<span class=\"". (extension_loaded($key) ? 'enabled': 'disabled') ."\"></span> " . $key;
+} $apacheInfo = join(" | ", $systemInfo['apache']);
+// owl extensions
+foreach ($owl_extensions as $key) {
+    $systemInfo['owl'][] = "<span class=\"". (extension_loaded($key) ? 'enabled': 'disabled') ."\"></span> " . $key;
+} $owlInfo = join(" | ", $systemInfo['owl']);
+
+// ip info
+$ipInfo = join(" | ", [getip('Server'), getip('Client'), getip('Public')]);
 
 // @todo:
 // - not work...
 // - only one
 // do action
-if ( !empty($_GET['action']) && !empty($_GET['action']) ) {
-    $action = $_GET['action'];
-    $site = $_GET['site'];
-    $path = $_GET['path'];
+if ( !empty(@$_GET['action']) && !empty(@$_GET['action']) ) {
+    $service = @$_GET['service'];
+    $action = @$_GET['action'];
+    $site = @$_GET['site'];
+    $path = @$_GET['path'];
+    $do = @$_GET['do'];
 
     switch ($action) {
         case 'disable':
-                shell_exec('a2dissite '.$site);
-                shell_exec('service apache2 reload');
+            shell_exec('sudo a2dissite '.$site);
+            shell_exec('service apache2 reload');
             break;
         case 'enable':
-                shell_exec('a2ensite '.$site);
-                shell_exec('service apache2 reload');
+            shell_exec('sudo a2ensite '.$site);
+            shell_exec('service apache2 reload');
             break;
         case 'remove':
             break;
         case 'projectNew':
+            break;
+        case 'service':
+            // shell_exec('service '.$service.' '.$do.' &');
             break;
         default:
             break;
@@ -65,23 +140,32 @@ function createMenu($list, $type) {
 
     foreach($list as $site) {
         echo '<li>';
+        if (in_array($site, $sitesEnabled)) {
+            echo '<span class="enabled"></span> <a href="https://' . $site . '/">' . $site . '</a>';
+            echo '&nbsp;(<a href="/?action=disable&site=' . $site . '.conf">disable</a>)';
+        } else {
+            echo '<span class="disabled"></span> <a>' . $site . '</a>';
+            echo '&nbsp;(<a href="/?action=enable&site=' . $site . '.conf">enable</a>)';
+        }
+        /*
         switch ($type) {
             case 'available':
                 echo '<a>' . $site . '</a>';
                 // echo '&nbsp;(<a href="' . $site . '">browse</a>)';
                 // echo '&nbsp;(<a href="' . $site . '/log/error_log">log</a>)';
-                if (!in_array($site, $sitesEnabled)) {
-                    // echo '&nbsp;(<a href="/?action=enable&site=' . $site . '">enable</a>)';
-                }
+                // if (!in_array($site, $sitesEnabled)) {
+                //     echo '&nbsp;(<a href="/?action=enable&site=' . $site . '">enable</a>)';
+                // }
                 // echo '&nbsp;(<a href="/?action=remove&site=' . $site . '">remove</a>)';
                 break;
             case 'enabled':
-                echo '<a href="https://' . $site . '">https://' . $site . '/</a>';
+                echo '<a href="https://' . $site . '">//' . $site . '/</a>';
                 // echo '&nbsp;(<a href="/?action=disable&site=' . $site . '">disable</a>)';
                 break;
             default:
                 break;
         }
+        */
         echo '</li>';
     }
 }
@@ -99,6 +183,11 @@ function parseDir($dir) {
 
     return $files;
 }
+
+$conn = new mysqli('localhost', 'root', 'local');
+
+// Check connection
+$mysql = ($conn->connect_error ? 'disabled': 'enabled');
 
 ?>
 
@@ -163,6 +252,7 @@ function parseDir($dir) {
             font-family: monospace;
             background-color: #1f1f1d;
             color: #FFEB3B;
+            margin-bottom: 40px;
         }
         div {
             margin: 40px auto;
@@ -192,6 +282,29 @@ function parseDir($dir) {
         a {
             color: #ff9800;
         }
+        a[href]:hover {
+            font-weight: bold;
+            color: #FF5722;
+        }
+        ul {
+            list-style: none;
+        }
+        ul li::before {
+            content: "-";
+            padding-right: 8px;
+            color: #ff9800;
+        }
+        .info {
+            font-size: 10px;
+        }
+        .enabled::after {
+            color: green;
+            content: "\2714";
+        }
+        .disabled::after {
+            color: red;
+            content: "\2718";
+        }
     </style>
 </head>
 <body>
@@ -207,17 +320,35 @@ function parseDir($dir) {
 
     <div class="links">
 
+        <h3>Services</h3>
+        <ul>
+            <li><span class="enabled"></span> Apache</li>
+            <li><span class="<?=$mysql;?>"></span> MySQL</li>
+            <li>OWL required modules
+                <ul>
+                    <li><?=$owlInfo;?></li>
+                </ul>
+            </li>
+        </ul>
         <h3>Internal links</h3>
         <ul>
             <li><a href="/?phpinfo">phpinfo</a></li>
             <!-- <li><a href="/phpmyadmin">phpmyadmin</a></li> -->
+            <!-- <li>apache (<a href="/?action=service&service=apache2&do=restart">restart</a>) (<a href="/?action=service&service=apache2&do=start">start</a>) (<a href="/?action=service&service=apache2&do=stop">stop</a>)</li> -->
+            <!-- <li>mysql (<a href="/?action=service&service=mysql&do=restart">restart</a>) (<a href="/?action=service&service=mysql&do=start">start</a>) (<a href="/?action=service&service=mysql&do=stop">stop</a>)</li> -->
         </ul>
 
         <hr />
 
+
     </div>
 
     <div class="links">
+
+        <h3>Sites</h3>
+        <ul><?=createMenu($sitesAvailable, 'available');?></ul>
+
+        <hr />
 
         <h1>Projects</h1>
         <ul>
@@ -250,20 +381,21 @@ function parseDir($dir) {
 
         <hr />
 
-        <h3>Sites Available</h3>
-        <ul><?=createMenu($sitesAvailable, 'available');?></ul>
+        <!-- <h3>Sites Enabled</h3> -->
+        <!-- <ul><?//=createMenu($sitesEnabled, 'enabled');?></ul> -->
 
-        <hr />
-
-        <h3>Sites Enabled</h3>
-        <ul><?=createMenu($sitesEnabled, 'enabled');?></ul>
-
-        <hr />
+        <!-- <hr /> -->
 
     </div>
 
-    <center>
-        <?=$systemInfo?>
+    <center class="info">
+        <?=$ipInfo;?>
+        <hr />
+        <?=$lampInfo?>
+        <hr />
+        <?=$phpInfo?>
+        <hr />
+        <?=$apacheInfo?>
         <hr />
         <small>code on <a href="https://github.com/gmolop/_LAMP_on_WSL">github</a> | by <a href="https://github.com/gmolop">gmolop</a></small>
     </center>
