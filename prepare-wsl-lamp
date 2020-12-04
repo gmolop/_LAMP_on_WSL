@@ -134,10 +134,10 @@ EOF
     sudo apt -y install vim
     sudo apt -y install ccze
     # Install ZSH and
-    sudo apt -y install zsh
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    # sudo apt -y install zsh
+    # sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     # set YS as default theme
-    sudo sed -i 's+ZSH_THEME=".*"+ZSH_THEME="ys"+' ~/.zshrc
+    # sudo sed -i 's+ZSH_THEME=".*"+ZSH_THEME="ys"+' ~/.zshrc
 
     # Enable modules
     sudo phpenmod mcrypt
