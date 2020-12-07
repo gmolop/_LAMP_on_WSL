@@ -158,9 +158,9 @@ EOF
     # test running "composer" command
 
 # ----- LARAVEL
-    composer global require laravel/installer
-    echo 'export PATH="$PATH:$HOME/.composer/vendor/bin"' >> ~/.bashrc
-    source ~/.bashrc
+    # composer global require laravel/installer
+    # echo 'export PATH="$PATH:$HOME/.composer/vendor/bin"' >> ~/.bashrc
+    # source ~/.bashrc
 
 # ----- PROJECT on MNT
     # create project folder if not exist
