@@ -16,7 +16,8 @@
     </Directory>
 
     ErrorLog ${APACHE_LOG_DIR}/error.log
-    LogLevel debug
+    # trace8, ..., trace1, debug, info, notice, warn, error, crit, alert, emerg.
+    # LogLevel debug
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 
@@ -38,7 +39,8 @@
     </Directory>
 
     ErrorLog ${APACHE_LOG_DIR}/error.log
-    LogLevel debug
+    # trace8, ..., trace1, debug, info, notice, warn, error, crit, alert, emerg.
+    # LogLevel debug
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 
     SSLEngine on

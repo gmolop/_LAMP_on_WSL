@@ -11,7 +11,7 @@
 
 # ----- REQUIRED TO INIT
     # Update system first
-    # 
+    #
     # sudo apt -y update
     # sudo apt -y install software-properties-common
     # sudo apt -y upgrade
@@ -95,7 +95,7 @@ EOF
 
     # Install PHP Extensions
     sudo apt -y install php7.3-mysql
-    sudo apt -y install php7.3-mcrypt
+    # sudo apt -y install php7.3-mcrypt
     sudo apt -y install php7.3-gettext
     sudo apt -y install php7.3-zip
     sudo apt -y install php7.3-dom
@@ -125,13 +125,19 @@ EOF
     # optional custom tools/services
     sudo apt -y install git
     sudo apt -y install wget
+    sudo apt -y install curl
     sudo apt -y install ssh
-    sudo apt -y install mtop
+    sudo apt -y install htop
     sudo apt -y install vim
     sudo apt -y install ccze
+    # Install ZSH and
+    # sudo apt -y install zsh
+    # sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    # set YS as default theme
+    # sudo sed -i 's+ZSH_THEME=".*"+ZSH_THEME="ys"+' ~/.zshrc
 
     # Enable modules
-    sudo phpenmod mcrypt
+    # sudo phpenmod mcrypt
     sudo phpenmod mbstring
     sudo a2enmod ssl
 
@@ -169,16 +175,37 @@ EOF
 
     # replace default documentRoot to /var/www/devroot
     sudo sed -i 's+DocumentRoot.*+DocumentRoot /var/www/devroot+g' /etc/apache2/sites-available/000-default.conf
-    
+
     # add some usefull alias to .profile
     echo "" >> ~/.profile
     echo "# custom alias" >> ~/.profile
     echo "alias aliasedit='vim ~/.profile;source ~/.profile'" >> ~/.profile
     echo "alias errors='tail -f /var/log/apache2/error.log | ccze'" >> ~/.profile
+    echo "alias clearerrors='sudo bash -c \"echo > /var/log/apache2/error.log\"'" >> ~/.profile
     echo "alias apachestop='sudo service apache2 stop;sudo service mysql stop'" >> ~/.profile
     echo "alias apachestart='sudo service apache2 start;sudo service mysql start'" >> ~/.profile
     echo "alias apacherestart='sudo service apache2 restart;sudo service mysql restart'" >> ~/.profile
     source ~/.profile
+    # and the same for .zshrc
+    # echo "" >> ~/.zshrc
+    # echo "# custom alias" >> ~/.zshrc
+    # echo "alias aliasedit='vim ~/.zshrc;source ~/.zshrc'" >> ~/.zshrc
+    # echo "alias errors='tail -f /var/log/apache2/error.log | ccze'" >> ~/.zshrc
+    # echo "alias clearerrors='sudo bash -c \"echo > /var/log/apache2/error.log\"'" >> ~/.zshrc
+    # echo "alias apachestop='sudo service apache2 stop;sudo service mysql stop'" >> ~/.zshrc
+    # echo "alias apachestart='sudo service apache2 start;sudo service mysql start'" >> ~/.zshrc
+    # echo "alias apacherestart='sudo service apache2 restart;sudo service mysql restart'" >> ~/.zshrc
+    # source ~/.zshrc
+
+    # Prevent APR_TCP_DEFER_ACCEPT error
+    sudo bash -c "echo '' >> /etc/apache2/apache2.conf"
+    sudo bash -c "echo '# Prevent APR_TCP_DEFER_ACCEPT error when starting Apache2' >> /etc/apache2/apache2.conf"
+    sudo bash -c "echo 'AcceptFilter http none' >> /etc/apache2/apache2.conf"
+    sudo bash -c "echo 'AcceptFilter https none' >> /etc/apache2/apache2.conf"
+
+    # Set system localtime to UTC
+    sudo mv /etc/localtime /etc/localtime.ori
+    sudo ln -s /usr/share/zoneinfo/UTC /etc/localtime
 
 # ----- RESTART & FINISH
     sudo service mysql restart
