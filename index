@@ -249,7 +249,7 @@ $mysql = ($conn->connect_error ? 'disabled': 'enabled');
 
         /* CUSTOM */
         body {
-            font-family: monospace;
+            font-family: monospace, monospace;
             background-color: #1f1f1d;
             color: #FFEB3B;
             margin-bottom: 40px;
