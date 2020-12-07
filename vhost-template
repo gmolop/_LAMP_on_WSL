@@ -1,4 +1,3 @@
-# required (only one)
 <VirtualHost *:80>
     ServerAdmin template.email
 
@@ -22,8 +21,7 @@
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 
-# one per domain
-<VirtualHost template.url:80 template.url:443>
+<VirtualHost *:443>
     ServerAdmin template.email
 
     ServerName template.url
@@ -48,6 +46,4 @@
     SSLEngine on
     SSLCertificateFile /etc/apache2/ssl/template.url.crt
     SSLCertificateKeyFile /etc/apache2/ssl/template.url.key
-
-    # RewriteMap
 </VirtualHost>
