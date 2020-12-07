@@ -249,10 +249,13 @@ $mysql = ($conn->connect_error ? 'disabled': 'enabled');
 
         /* CUSTOM */
         body {
-            font-family: monospace, monospace;
+            font-family: monospace,monospace;
+            font-family: monospace;
             background-color: #1f1f1d;
             color: #FFEB3B;
             margin-bottom: 40px;
+            font-size: 12px;
+            /*line-height: 1.3;*/
         }
         div {
             margin: 40px auto;
