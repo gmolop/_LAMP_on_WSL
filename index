@@ -7,100 +7,36 @@ if (isset($_GET["phpinfo"])) {
     exit();
 }
 
-// IP's
-function getip($from) {
-    switch ($from) {
-        case 'Server':
-            $_ip = @$_SERVER['HTTP_X_SERVER_ADDRESS'] ?: @$_SERVER['SERVER_ADDR'];
-            break;
-        case 'Client':
-            if (isset($_SERVER)) {
-                if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
-                    $_ip = $_SERVER["HTTP_X_FORWARDED_FOR"];
-                } elseif (isset($_SERVER["HTTP_CLIENT_IP"])) {
-                    $_ip = $_SERVER["HTTP_CLIENT_IP"];
-                } else {
-                    $_ip = @$_SERVER["REMOTE_ADDR"];
-                }
-            } else {
-                if (getenv('HTTP_X_FORWARDED_FOR')) {
-                    $_ip = getenv('HTTP_X_FORWARDED_FOR');
-                } elseif (getenv('HTTP_CLIENT_IP')) {
-                    $_ip = getenv('HTTP_CLIENT_IP');
-                } else {
-                    $_ip = getenv('REMOTE_ADDR');
-                }
-            }
-            break;
-        case 'Public':
-            $_ip = file_get_contents('http://ipecho.net/plain');
-            break;
-    }
-    $return = false;
-    if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-        $return = $from . ' <a>IPv4 '.$_ip.'</a>';
-    }
-    if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-        $return = $from . ' <a>IPv6 '.$_ip.'</a>';
-    }
-    return $return ?: $from . ' has an invalid IP';
-}
-
 // get current target page
 $currentPath = shell_exec('readlink -f /var/www/devroot');
-$lamp = [
-    "PHP" => phpversion(),
+$version = [
+    "PHP&nbsp;&nbsp;&nbsp;" => phpversion(),
     "Apache" => apache_get_version(),
-    "Mysql" => shell_exec('mysql --version'),
+    "Mysql&nbsp;" => shell_exec('mysql --version'),
     // "Mysql" => mysqli_get_client_info(),
     // "Laravel" => shell_exec('php artisan --version'),
     // "Composer" => shell_exec('composer -V'),
-    "OS" => shell_exec('cat /etc/issue'),
+    "OS&nbsp;&nbsp;&nbsp;&nbsp;" => shell_exec('cat /etc/issue'),
 ];
-$php_modules = [
-    "bcmath","bz2","calendar","Core","ctype","curl","date","dba","dom","ereg","exif","fileinfo","filter","ftp","gd","gettext","hash","iconv","imap","ionCube Loader","json","libxml","mbstring","mhash","mysql","mysqli","openssl","pcntl","pcre","PDO","pdo_mysql","pdo_sqlite","Phar","posix","readline","Reflection","session","shmop","SimpleXML","soap","sockets","SPL","sqlite3","standard","sysvmsg","sysvsem","sysvshm","tokenizer","wddx","xml","xmlreader","xmlwriter","xsl","Zend OPcache","zip","zlib"
-];
-$apache_modules = [
-    "access_compact","auth_basic","authn_core","deflate","filter","proxy","reqtimeout","status","cgi","fcgid","headers","negotiation","socache_shmcb","userdir","autoindex","dir","include","proxy_fcgi","remoteip","rewrite","setenvif","suexec"
-];
-$owl_extensions = [
-    "standard","SPL","Core","openssl","pcre","filter","json","date","ctype","tokenizer","hash","mysqli","SimpleXML","mbstring","gettext","sysvshm","curl","readline","sockets","pcntl","posix","session","xml","sodium","zlib","Zend OPcache","iconv","gd","libxml"
-];
+
+$conn = new mysqli('127.0.0.1', 'root', 'local');
+// Check connection
+$mysql = '<span class="php ';
+$mysql .= ($conn->connect_error ? 'disabled' : 'enabled');
+$mysql .= '"></span> MySQL '.@$conn->connect_error;
 
 // system info
-$systemInfo = [
-    "lamp" => [],
-    "php" => [],
-    "apache" => [],
-    "owl" => []
-];
+// $systemInfo = [];
+$systemInfo = "";
+foreach ($version as $key => $value) {
+    $systemInfo .= '<li><span class="php enabled"> '.$key.'</span> <small>'.$value.'</small></li>';
+    // $systemInfo[] = $key . " <span>" . $value . "</span>";
+}
+// $systemInfo = join(" | ", $systemInfo);
 
-// lamp
-foreach ($lamp as $key => $value) {
-    $systemInfo['lamp'][] = $key . " <span>" . $value . "</span>";
-} $lampInfo = join(" | ", $systemInfo['lamp']);
-
-// php modules
-foreach ($php_modules as $key) {
-    $systemInfo['php'][] = "<span class=\"". (extension_loaded($key) ? 'enabled': 'disabled') ."\"></span> " . $key;
-} $phpInfo = join(" | ", $systemInfo['php']);
-// apache modules
-foreach ($apache_modules as $key) {
-    $systemInfo['apache'][] = "<span class=\"". (extension_loaded($key) ? 'enabled': 'disabled') ."\"></span> " . $key;
-} $apacheInfo = join(" | ", $systemInfo['apache']);
-// owl extensions
-foreach ($owl_extensions as $key) {
-    $systemInfo['owl'][] = "<span class=\"". (extension_loaded($key) ? 'enabled': 'disabled') ."\"></span> " . $key;
-} $owlInfo = join(" | ", $systemInfo['owl']);
-
-// ip info
-$ipInfo = join(" | ", [getip('Server'), getip('Client'), getip('Public')]);
-
-// @todo:
-// - not work...
-// - only one
-// do action
-if ( !empty(@$_GET['action']) && !empty(@$_GET['action']) ) {
+// @todo: not work, only one, do action
+/*
+if (!empty(@$_GET['action'])) {
     $service = @$_GET['service'];
     $action = @$_GET['action'];
     $site = @$_GET['site'];
@@ -127,7 +63,7 @@ if ( !empty(@$_GET['action']) && !empty(@$_GET['action']) ) {
             break;
     }
 }
-
+*/
 
 // $erro_log = shell_exec('tail -n 15 /var/log/apache2/error.log');
 
@@ -140,32 +76,23 @@ function createMenu($list, $type) {
 
     foreach($list as $site) {
         echo '<li>';
-        if (in_array($site, $sitesEnabled)) {
-            echo '<span class="enabled"></span> <a href="https://' . $site . '/">' . $site . '</a>';
-            echo '&nbsp;(<a href="/?action=disable&site=' . $site . '.conf">disable</a>)';
-        } else {
-            echo '<span class="disabled"></span> <a>' . $site . '</a>';
-            echo '&nbsp;(<a href="/?action=enable&site=' . $site . '.conf">enable</a>)';
-        }
-        /*
         switch ($type) {
             case 'available':
                 echo '<a>' . $site . '</a>';
                 // echo '&nbsp;(<a href="' . $site . '">browse</a>)';
                 // echo '&nbsp;(<a href="' . $site . '/log/error_log">log</a>)';
-                // if (!in_array($site, $sitesEnabled)) {
-                //     echo '&nbsp;(<a href="/?action=enable&site=' . $site . '">enable</a>)';
-                // }
+                if (!in_array($site, $sitesEnabled)) {
+                    // echo '&nbsp;(<a href="/?action=enable&site=' . $site . '">enable</a>)';
+                }
                 // echo '&nbsp;(<a href="/?action=remove&site=' . $site . '">remove</a>)';
                 break;
             case 'enabled':
-                echo '<a href="https://' . $site . '">//' . $site . '/</a>';
+                echo '<a href="https://' . $site . '">https://' . $site . '/</a>';
                 // echo '&nbsp;(<a href="/?action=disable&site=' . $site . '">disable</a>)';
                 break;
             default:
                 break;
         }
-        */
         echo '</li>';
     }
 }
@@ -184,10 +111,51 @@ function parseDir($dir) {
     return $files;
 }
 
-$conn = new mysqli('localhost', 'root', 'local');
+/*  ------------------------------------------------------------------------
+    :: IP's
+    ------------------------------------------------------------------------ */
+    // Server
+    define("_IP_SERVER", @$_SERVER['HTTP_X_SERVER_ADDRESS'] ?: @$_SERVER['SERVER_ADDR']);
+    // Public Ip from LOCALHOST
+    define("_IP_PUBLIC", @file_get_contents('http://ipecho.net/plain'));
+    // Host name
+    define("_IP_HOSTNAME", getHostName());
+    // Socket IP
+    $_socket_ip = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+    socket_connect($_socket_ip, "8.8.4.4", 53);
+    socket_getsockname($_socket_ip, $_socket_ip);
+    define("_IP_SOCKET", $_socket_ip);
+    unset($_socket_ip);
 
-// Check connection
-$mysql = ($conn->connect_error ? 'disabled': 'enabled');
+    // Client
+    define("_IP_CLIENT", (function() {
+        if (isset($_SERVER)) {
+            if (isset($_SERVER["HTTP_X_FORWARDED_FOR"])) {
+                $realip = $_SERVER["HTTP_X_FORWARDED_FOR"];
+            } elseif (isset($_SERVER["HTTP_CLIENT_IP"])) {
+                $realip = $_SERVER["HTTP_CLIENT_IP"];
+            } else {
+                $realip = @$_SERVER["REMOTE_ADDR"];
+            }
+        } else {
+            if (getenv('HTTP_X_FORWARDED_FOR')) {
+                $realip = getenv('HTTP_X_FORWARDED_FOR');
+            } elseif (getenv('HTTP_CLIENT_IP')) {
+                $realip = getenv('HTTP_CLIENT_IP');
+            } else {
+                $realip = getenv('REMOTE_ADDR');
+            }
+        }
+        return $realip;
+    })());
+
+$owl_extensions = [
+    "standard","SPL","Core","openssl","pcre","filter","json","date","ctype","tokenizer","hash","mysqli","SimpleXML","mbstring","gettext","sysvshm","curl","readline","sockets","pcntl","posix","session","xml","sodium","zlib","Zend OPcache","iconv","gd","libxml"
+];
+
+foreach ($owl_extensions as $key) {
+    $systemInfo_owl[] = "<span class=\"php ". (extension_loaded($key) ? 'enabled': 'disabled') ."\"></span> " . $key;
+} $owlInfo = join(" · ", $systemInfo_owl);
 
 ?>
 
@@ -282,6 +250,7 @@ $mysql = ($conn->connect_error ? 'disabled': 'enabled');
             width: 325px;
         }
         center span,
+        li small,
         a {
             color: #ff9800;
         }
@@ -318,40 +287,30 @@ $mysql = ($conn->connect_error ? 'disabled': 'enabled');
   / / __ \/ ___/ __ `/ / __ \/ __ \/ ___/ __/
  / / /_/ / /__/ /_/ / / / / / /_/ (__  ) /_
 /_/\____/\___/\__,_/_/_/ /_/\____/____/\__/
-
-<hr /></div>
+<hr /><center><small>Server:<a><?=_IP_SERVER;?></a>&nbsp;Public:<a><?=_IP_PUBLIC;?></a>&nbsp;Client:<a><?=_IP_CLIENT;?></a><br/>Lan:<a><?=_IP_SOCKET;?></a>&nbsp;HostName:<a><?=_IP_HOSTNAME;?></a></small></center></div>
 
     <div class="links">
 
-        <h3>Services</h3>
+        <h3>System</h3>
         <ul>
-            <li><span class="enabled"></span> Apache</li>
-            <li><span class="<?=$mysql;?>"></span> MySQL</li>
-            <li>OWL required modules
-                <ul>
-                    <li><?=$owlInfo;?></li>
-                </ul>
-            </li>
-        </ul>
-        <h3>Internal links</h3>
-        <ul>
-            <li><a href="/?phpinfo">phpinfo</a></li>
+            <?=$systemInfo?>
+            <!-- <li><span class="php enabled"></span> PHP <small><?=phpversion();?>(<a href="/?phpinfo">phpinfo</a></small>)</li> -->
             <!-- <li><a href="/phpmyadmin">phpmyadmin</a></li> -->
-            <!-- <li>apache (<a href="/?action=service&service=apache2&do=restart">restart</a>) (<a href="/?action=service&service=apache2&do=start">start</a>) (<a href="/?action=service&service=apache2&do=stop">stop</a>)</li> -->
-            <!-- <li>mysql (<a href="/?action=service&service=mysql&do=restart">restart</a>) (<a href="/?action=service&service=mysql&do=start">start</a>) (<a href="/?action=service&service=mysql&do=stop">stop</a>)</li> -->
+            <!-- <li><?=$mysql;?></li> -->
         </ul>
 
         <hr />
 
+        <h3>PHP Extensions</h3>
+        <ul>
+            <li><?=$owlInfo;?></li>
+        </ul>
+
+        <hr />
 
     </div>
 
     <div class="links">
-
-        <h3>Sites</h3>
-        <ul><?=createMenu($sitesAvailable, 'available');?></ul>
-
-        <hr />
 
         <h1>Projects</h1>
         <ul>
@@ -384,23 +343,23 @@ $mysql = ($conn->connect_error ? 'disabled': 'enabled');
 
         <hr />
 
-        <!-- <h3>Sites Enabled</h3> -->
-        <!-- <ul><?//=createMenu($sitesEnabled, 'enabled');?></ul> -->
+        <h3>Sites Available</h3>
+        <ul><?=createMenu($sitesAvailable, 'available');?></ul>
 
-        <!-- <hr /> -->
+        <hr />
+
+        <h3>Sites Enabled</h3>
+        <ul><?=createMenu($sitesEnabled, 'enabled');?></ul>
+
+        <hr />
 
     </div>
 
-    <center class="info">
-        <?=$ipInfo;?>
-        <hr />
-        <?=$lampInfo?>
-        <hr />
-        <?=$phpInfo?>
-        <hr />
-        <?=$apacheInfo?>
+    <center>
+        <?//=$systemInfo?>
         <hr />
         <small>code on <a href="https://github.com/gmolop/_LAMP_on_WSL">github</a> | by <a href="https://github.com/gmolop">gmolop</a></small>
+        <br /><br />
     </center>
 
     <?php /*

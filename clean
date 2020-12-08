@@ -11,12 +11,15 @@ sudo shopt -s extglob
 sudo cd /etc/apache2/sites-available
 sudo rm !(000-default.conf|default-ssl.conf)
 sudo cd /etc/apache2/sites-enabled
-sudo rm !(000-default.conf)
-sudo rm -R /etc/apache2/ssl
+sudo rm !(000-default.conf.ori)
+sudo mv /etc/apache2/sites-available/000-default.conf.ori /etc/apache2/sites-available/000-default.conf
+sudo cd /etc/apache2/ssl
+sudo rm *.crt
+sudo rm *.info
+sudo rm *.key
+sudo rm *.txt
 sudo shopt -u extglob
 cd ~/
-
-sudo service apache2 restart
 
 # optional, remove apache & database (cleaning data)
 # sudo apt remove --purge apache2 mariadb-server mariadb-client
