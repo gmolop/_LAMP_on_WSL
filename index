@@ -10,7 +10,7 @@ if (isset($_GET["phpinfo"])) {
 // get current target page
 $currentPath = shell_exec('readlink -f /var/www/devroot');
 $version = [
-    "PHP&nbsp;&nbsp;&nbsp;" => phpversion(),
+    "PHP&nbsp;&nbsp;&nbsp;" => phpversion() . ' <small>(<a href="/?phpinfo">phpinfo</a>)</small>',
     "Apache" => apache_get_version(),
     "Mysql&nbsp;" => shell_exec('mysql --version'),
     // "Mysql" => mysqli_get_client_info(),
@@ -26,13 +26,10 @@ $mysql .= ($conn->connect_error ? 'disabled' : 'enabled');
 $mysql .= '"></span> MySQL '.@$conn->connect_error;
 
 // system info
-// $systemInfo = [];
 $systemInfo = "";
 foreach ($version as $key => $value) {
     $systemInfo .= '<li><span class="php enabled"> '.$key.'</span> <small>'.$value.'</small></li>';
-    // $systemInfo[] = $key . " <span>" . $value . "</span>";
 }
-// $systemInfo = join(" | ", $systemInfo);
 
 // @todo: not work, only one, do action
 /*
@@ -294,9 +291,6 @@ foreach ($owl_extensions as $key) {
         <h3>System</h3>
         <ul>
             <?=$systemInfo?>
-            <!-- <li><span class="php enabled"></span> PHP <small><?=phpversion();?>(<a href="/?phpinfo">phpinfo</a></small>)</li> -->
-            <!-- <li><a href="/phpmyadmin">phpmyadmin</a></li> -->
-            <!-- <li><?=$mysql;?></li> -->
         </ul>
 
         <hr />
@@ -356,7 +350,6 @@ foreach ($owl_extensions as $key) {
     </div>
 
     <center>
-        <?//=$systemInfo?>
         <hr />
         <small>code on <a href="https://github.com/gmolop/_LAMP_on_WSL">github</a> | by <a href="https://github.com/gmolop">gmolop</a></small>
         <br /><br />
